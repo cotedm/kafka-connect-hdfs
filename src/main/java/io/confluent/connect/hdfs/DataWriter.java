@@ -75,12 +75,11 @@ public class DataWriter {
   private String hiveDatabase;
   private HiveMetaStore hiveMetaStore;
   private HiveUtil hive;
-  private Queue<Future> hiveUpdateFutures;
+  private Queue<Future<Void>> hiveUpdateFutures;
   private boolean hiveIntegration;
   private Thread ticketRenewThread;
   private volatile boolean isRunning;
 
-  @SuppressWarnings("unchecked")
   public DataWriter(HdfsSinkConnectorConfig connectorConfig, SinkTaskContext context, AvroData avroData) {
     try {
       String hadoopHome = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_HOME_CONFIG);
@@ -163,12 +162,13 @@ public class DataWriter {
       topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
       String logsDir = connectorConfig.getString(HdfsSinkConnectorConfig.LOGS_DIR_CONFIG);
 
+      @SuppressWarnings("unchecked")
       Class<? extends Storage> storageClass = (Class<? extends Storage>) Class
               .forName(connectorConfig.getString(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG));
       storage = StorageFactory.createStorage(storageClass, conf, url);
 
       createDir(topicsDir);
-      createDir(topicsDir + HdfsSinkConnecorConstants.TEMPFILE_DIRECTORY);
+      createDir(topicsDir + HdfsSinkConnectorConstants.TEMPFILE_DIRECTORY);
       createDir(logsDir);
 
       format = getFormat();
@@ -212,10 +212,10 @@ public class DataWriter {
     }
 
     if (hiveIntegration) {
-      Iterator<Future> iterator = hiveUpdateFutures.iterator();
+      Iterator<Future<Void>> iterator = hiveUpdateFutures.iterator();
       while (iterator.hasNext()) {
         try {
-          Future future = iterator.next();
+          Future<Void> future = iterator.next();
           if (future.isDone()) {
             future.get();
             iterator.remove();
@@ -295,7 +295,7 @@ public class DataWriter {
       try {
         topicPartitionWriters.get(tp).close();
       } catch (ConnectException e) {
-        log.error("Error closing writer for {}. Error: {]", tp, e.getMessage());
+        log.error("Error closing writer for {}. Error: {}", tp, e.getMessage());
       } finally {
         topicPartitionWriters.remove(tp);
       }
@@ -354,7 +354,7 @@ public class DataWriter {
     return storage;
   }
 
-  public Map<String, RecordWriter> getWriters(TopicPartition tp) {
+  public Map<String, RecordWriter<SinkRecord>> getWriters(TopicPartition tp) {
     return topicPartitionWriters.get(tp).getWriters();
   }
 
@@ -386,10 +386,10 @@ public class DataWriter {
     return sb.toString();
   }
 
-  @SuppressWarnings("unchecked")
   private Partitioner createPartitioner(HdfsSinkConnectorConfig config)
       throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
+    @SuppressWarnings("unchecked")
     Class<? extends Partitioner> partitionerClasss = (Class<? extends Partitioner>)
         Class.forName(config.getString(HdfsSinkConnectorConfig.PARTITIONER_CLASS_CONFIG));
 

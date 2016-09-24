@@ -1,7 +1,9 @@
 # Kafka Connect HDFS Connector
 
-kafka-connect-hdfs is a [Kafka Connector](http://kafka.apache.org/090/documentation.html#connect)
+kafka-connect-hdfs is a [Kafka Connector](http://kafka.apache.org/documentation.html#connect)
 for copying data between Kafka and Hadoop HDFS.
+
+Documentation for this connector can be found [here](http://docs.confluent.io/current/connect/connect-hdfs/docs/index.html).
 
 # Development
 
